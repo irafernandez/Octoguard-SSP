@@ -6,72 +6,84 @@ from utils.constants import *
 
 
 class FormValidatorView:
-    """Form input validator interface"""
 
     def __init__(self, parent):
         self.parent = parent
+        self.validation_results = {}
+        self.sanitization_results = {}
         self.create_view()
 
     def create_view(self):
-        """Create the form validator interface"""
+        """Create form validator interface"""
         # Header section
         header_frame = tk.Frame(self.parent, bg=COLORS['bg_primary'])
         header_frame.pack(fill=tk.X, pady=(0, 20))
 
         title = tk.Label(header_frame, text="Form Input Validator",
-                        font=FONTS.get('heading', FONT_FALLBACKS['heading']),
-                        bg=COLORS['bg_primary'],
-                        fg=COLORS['text_primary'])
+                         font=FONTS.get('heading', FONT_FALLBACKS['heading']),
+                         bg=COLORS['bg_primary'],
+                         fg=COLORS['text_primary'])
         title.pack(anchor=tk.W, side=tk.LEFT)
 
         # Status indicator
-        status_badge = tk.Label(header_frame, text="● VALIDATING",
-                               font=FONTS.get('small', FONT_FALLBACKS['small']),
-                               bg=COLORS['bg_tertiary'],
-                               fg=COLORS['warning'],
-                               padx=10, pady=4)
-        status_badge.pack(side=tk.RIGHT)
+        self.status_badge = tk.Label(header_frame, text="● READY",
+                                     font=FONTS.get('small', FONT_FALLBACKS['small']),
+                                     bg=COLORS['bg_tertiary'],
+                                     fg=COLORS['text_muted'],
+                                     padx=10, pady=4)
+        self.status_badge.pack(side=tk.RIGHT)
 
         desc = tk.Label(self.parent,
-                       text="Advanced input validation with XSS and SQL injection detection",
-                       font=FONTS.get('small', FONT_FALLBACKS['small']),
-                       bg=COLORS['bg_primary'],
-                       fg=COLORS['text_tertiary'])
+                        text="Advanced input validation with XSS and SQL injection detection",
+                        font=FONTS.get('small', FONT_FALLBACKS['small']),
+                        bg=COLORS['bg_primary'],
+                        fg=COLORS['text_tertiary'])
         desc.pack(anchor=tk.W, pady=(0, 25))
 
-        # Main container with two columns
-        main_container = tk.Frame(self.parent, bg=COLORS['bg_primary'])
-        main_container.pack(fill=tk.BOTH, expand=True)
+        # Main content area
+        content = tk.Frame(self.parent, bg=COLORS['bg_primary'])
+        content.pack(fill=tk.BOTH, expand=True)
 
-        # Left column - Input
-        left_column = tk.Frame(main_container, bg=COLORS['bg_primary'])
-        left_column.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
+        # Left side - Input form
+        left_panel = tk.Frame(content, bg=COLORS['bg_primary'])
+        left_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
 
-        # Right column - Results
-        right_column = tk.Frame(main_container, bg=COLORS['bg_primary'])
-        right_column.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(10, 0))
+        # Right side - Results
+        right_panel = tk.Frame(content, bg=COLORS['bg_primary'])
+        right_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(10, 0))
 
-        # Input card
-        input_card = self.create_card(left_column, "Form Inputs")
+        # === LEFT PANEL: INPUT FORM ===
+        input_card = self.create_card(left_panel, "Form Inputs")
 
-        # Form fields
-        self.name_entry = self.create_input_field(input_card, "Full Name",
-                                                  "John Doe")
+        # Form fields with validation indicators
+        self.name_entry, self.name_indicator = self.create_input_with_indicator(
+            input_card, "Full Name", "John Doe")
 
-        self.email_entry = self.create_input_field(input_card, "Email Address",
-                                                   "john@example.com")
+        self.email_entry, self.email_indicator = self.create_input_with_indicator(
+            input_card, "Email Address", "john@example.com")
 
-        self.username_entry = self.create_input_field(input_card, "Username",
-                                                      "johndoe123")
+        self.username_entry, self.username_indicator = self.create_input_with_indicator(
+            input_card, "Username", "johndoe123")
 
         # Message field (larger)
-        msg_label = tk.Label(input_card, text="Message",
-                            font=FONTS.get('small', FONT_FALLBACKS['small']),
-                            bg=COLORS['bg_secondary'],
-                            fg=COLORS['text_muted'])
-        msg_label.pack(anchor=tk.W, pady=(15, 6))
+        msg_container = tk.Frame(input_card, bg=COLORS['bg_secondary'])
+        msg_container.pack(fill=tk.X, pady=(15, 0))
 
-        msg_frame = tk.Frame(input_card, bg=COLORS['bg_tertiary'])
+        msg_header = tk.Frame(msg_container, bg=COLORS['bg_secondary'])
+        msg_header.pack(fill=tk.X, pady=(0, 6))
+
+        tk.Label(msg_header, text="Message",
+                 font=FONTS.get('small', FONT_FALLBACKS['small']),
+                 bg=COLORS['bg_secondary'],
+                 fg=COLORS['text_muted']).pack(side=tk.LEFT)
+
+        self.message_indicator = tk.Label(msg_header, text="●",
+                                          font=('Segoe UI', 10),
+                                          bg=COLORS['bg_secondary'],
+                                          fg=COLORS['text_muted'])
+        self.message_indicator.pack(side=tk.RIGHT)
+
+        msg_frame = tk.Frame(msg_container, bg=COLORS['bg_tertiary'])
         msg_frame.pack(fill=tk.X, pady=(0, 20))
 
         self.message_entry = tk.Text(msg_frame,
@@ -83,49 +95,104 @@ class FormValidatorView:
                                      insertbackground=COLORS['accent_primary'],
                                      wrap=tk.WORD)
         self.message_entry.pack(fill=tk.X, padx=12, pady=10)
-        self.message_entry.insert("1.0", "Hello, I would like to...")
+        self.message_entry.insert("1.0", "Hello, I would like to inquire...")
+
+        # Character counter
+        self.char_counter = tk.Label(msg_container,
+                                     text="0/250 characters",
+                                     font=FONTS.get('small', FONT_FALLBACKS['small']),
+                                     bg=COLORS['bg_secondary'],
+                                     fg=COLORS['text_muted'])
+        self.char_counter.pack(anchor=tk.E, pady=(5, 15))
+        self.message_entry.bind('<KeyRelease>', self.update_char_counter)
 
         # Validate button
         validate_btn = self.create_button(input_card, "Validate & Sanitize",
-                                         self.validate_form)
-        validate_btn.pack(pady=(0, 0))
+                                          self.validate_form)
+        validate_btn.pack()
 
-        # Results card
-        results_card = self.create_card(right_column, "Validation Results")
+        # === RIGHT PANEL: RESULTS ===
 
-        # Results display with modern scrolled text
-        self.results_display = scrolledtext.ScrolledText(
-            results_card,
+        # Validation summary card
+        summary_card = self.create_card(right_panel, "Validation Summary")
+
+        # Summary grid
+        self.summary_grid = tk.Frame(summary_card, bg=COLORS['bg_secondary'])
+        self.summary_grid.pack(fill=tk.X, pady=(10, 20))
+
+        # Create summary items (will be populated after validation)
+        self.create_initial_summary()
+
+        # Detailed results card
+        results_card = self.create_card(right_panel, "Detailed Results")
+
+        # Tabbed interface for results
+        tab_frame = tk.Frame(results_card, bg=COLORS['bg_secondary'])
+        tab_frame.pack(fill=tk.X, pady=(0, 10))
+
+        self.tab_validation = self.create_tab_button(tab_frame, "Validation",
+                                                     lambda: self.switch_tab('validation'), True)
+        self.tab_validation.pack(side=tk.LEFT, padx=(0, 5))
+
+        self.tab_sanitization = self.create_tab_button(tab_frame, "Sanitization",
+                                                       lambda: self.switch_tab('sanitization'), False)
+        self.tab_sanitization.pack(side=tk.LEFT)
+
+        # Results display area
+        self.results_container = tk.Frame(results_card, bg=COLORS['bg_secondary'])
+        self.results_container.pack(fill=tk.BOTH, expand=True)
+
+        # Validation results view
+        self.validation_view = scrolledtext.ScrolledText(
+            self.results_container,
             bg=COLORS['bg_tertiary'],
             fg=COLORS['text_primary'],
-            font=FONTS.get('code_small', FONT_FALLBACKS['code_small']),
+            font=FONTS.get('small', FONT_FALLBACKS['small']),
             relief=tk.FLAT,
             insertbackground=COLORS['accent_primary'],
             wrap=tk.WORD,
             state='disabled'
         )
-        self.results_display.pack(fill=tk.BOTH, expand=True, pady=15)
 
-        # Configure text tags for colored output
-        self.results_display.tag_config('valid', foreground=COLORS['success'])
-        self.results_display.tag_config('invalid', foreground=COLORS['error'])
-        self.results_display.tag_config('warning', foreground=COLORS['warning'])
-        self.results_display.tag_config('header', foreground=COLORS['accent_primary'],
-                                       font=FONTS.get('code', FONT_FALLBACKS['code']))
+        # Sanitization results view
+        self.sanitization_view = scrolledtext.ScrolledText(
+            self.results_container,
+            bg=COLORS['bg_tertiary'],
+            fg=COLORS['text_primary'],
+            font=FONTS.get('small', FONT_FALLBACKS['small']),
+            relief=tk.FLAT,
+            insertbackground=COLORS['accent_primary'],
+            wrap=tk.WORD,
+            state='disabled'
+        )
+
+        # Configure text tags
+        for view in [self.validation_view, self.sanitization_view]:
+            view.tag_config('valid', foreground=COLORS['success'], font=FONTS.get('body', FONT_FALLBACKS['body']))
+            view.tag_config('invalid', foreground=COLORS['error'], font=FONTS.get('body', FONT_FALLBACKS['body']))
+            view.tag_config('warning', foreground=COLORS['warning'], font=FONTS.get('body', FONT_FALLBACKS['body']))
+            view.tag_config('header', foreground=COLORS['accent_primary'],
+                            font=FONTS.get('subheading', FONT_FALLBACKS['subheading']))
+            view.tag_config('field', foreground=COLORS['text_primary'],
+                            font=FONTS.get('body', FONT_FALLBACKS['body']))
+
+        # Show validation view by default
+        self.current_tab = 'validation'
+        self.validation_view.pack(fill=tk.BOTH, expand=True)
 
     def create_card(self, parent, title):
         """Create a card container"""
         card = tk.Frame(parent, bg=COLORS['bg_secondary'])
-        card.pack(fill=tk.BOTH, expand=True, pady=(0, 0))
+        card.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
 
         # Card header
         header = tk.Frame(card, bg=COLORS['bg_secondary'])
         header.pack(fill=tk.X, padx=CARD_PADDING, pady=(CARD_PADDING, 10))
 
         title_label = tk.Label(header, text=title,
-                              font=FONTS.get('subheading', FONT_FALLBACKS['subheading']),
-                              bg=COLORS['bg_secondary'],
-                              fg=COLORS['text_primary'])
+                               font=FONTS.get('subheading', FONT_FALLBACKS['subheading']),
+                               bg=COLORS['bg_secondary'],
+                               fg=COLORS['text_primary'])
         title_label.pack(side=tk.LEFT)
 
         accent_line = tk.Frame(header, bg=COLORS['accent_primary'], height=2, width=40)
@@ -137,39 +204,108 @@ class FormValidatorView:
 
         return content
 
-    def create_input_field(self, parent, label, placeholder):
-        """Create input field"""
-        label_widget = tk.Label(parent, text=label,
-                               font=FONTS.get('small', FONT_FALLBACKS['small']),
-                               bg=COLORS['bg_secondary'],
-                               fg=COLORS['text_muted'])
-        label_widget.pack(anchor=tk.W, pady=(15, 6))
+    def create_input_with_indicator(self, parent, label, placeholder):
+        """Create input field with validation indicator"""
+        container = tk.Frame(parent, bg=COLORS['bg_secondary'])
+        container.pack(fill=tk.X, pady=(15, 0))
 
-        field_frame = tk.Frame(parent, bg=COLORS['bg_tertiary'])
-        field_frame.pack(fill=tk.X, pady=(0, 0))
+        # Label with indicator
+        header = tk.Frame(container, bg=COLORS['bg_secondary'])
+        header.pack(fill=tk.X, pady=(0, 6))
+
+        label_widget = tk.Label(header, text=label,
+                                font=FONTS.get('small', FONT_FALLBACKS['small']),
+                                bg=COLORS['bg_secondary'],
+                                fg=COLORS['text_muted'])
+        label_widget.pack(side=tk.LEFT)
+
+        indicator = tk.Label(header, text="●",
+                             font=('Segoe UI', 10),
+                             bg=COLORS['bg_secondary'],
+                             fg=COLORS['text_muted'])
+        indicator.pack(side=tk.RIGHT)
+
+        # Input field
+        field_frame = tk.Frame(container, bg=COLORS['bg_tertiary'])
+        field_frame.pack(fill=tk.X)
 
         entry = tk.Entry(field_frame,
-                        bg=COLORS['bg_tertiary'],
-                        fg=COLORS['input_text'],
-                        font=FONTS.get('body', FONT_FALLBACKS['body']),
-                        relief=tk.FLAT,
-                        insertbackground=COLORS['accent_primary'])
+                         bg=COLORS['bg_tertiary'],
+                         fg=COLORS['input_text'],
+                         font=FONTS.get('body', FONT_FALLBACKS['body']),
+                         relief=tk.FLAT,
+                         insertbackground=COLORS['accent_primary'])
         entry.pack(fill=tk.X, padx=12, pady=10)
         entry.insert(0, placeholder)
 
-        return entry
+        return entry, indicator
+
+    def create_tab_button(self, parent, text, command, active=False):
+        """Create tab button"""
+        bg = COLORS['bg_tertiary'] if active else COLORS['bg_secondary']
+        fg = COLORS['text_primary'] if active else COLORS['text_secondary']
+
+        btn = tk.Label(parent, text=text,
+                       font=FONTS.get('small', FONT_FALLBACKS['small']),
+                       bg=bg, fg=fg,
+                       padx=15, pady=8,
+                       cursor='hand2')
+        btn.bind('<Button-1>', lambda e: command())
+
+        return btn
+
+    def switch_tab(self, tab_name):
+        """Switch between validation and sanitization tabs"""
+        self.current_tab = tab_name
+
+        # Update tab styles
+        if tab_name == 'validation':
+            self.tab_validation.config(bg=COLORS['bg_tertiary'], fg=COLORS['text_primary'])
+            self.tab_sanitization.config(bg=COLORS['bg_secondary'], fg=COLORS['text_secondary'])
+            self.sanitization_view.pack_forget()
+            self.validation_view.pack(fill=tk.BOTH, expand=True)
+        else:
+            self.tab_sanitization.config(bg=COLORS['bg_tertiary'], fg=COLORS['text_primary'])
+            self.tab_validation.config(bg=COLORS['bg_secondary'], fg=COLORS['text_secondary'])
+            self.validation_view.pack_forget()
+            self.sanitization_view.pack(fill=tk.BOTH, expand=True)
+
+    def create_initial_summary(self):
+        """Create initial summary display"""
+        fields = ['Full Name', 'Email', 'Username', 'Message']
+
+        for i, field in enumerate(fields):
+            item = tk.Frame(self.summary_grid, bg=COLORS['bg_tertiary'])
+            item.pack(fill=tk.X, pady=3)
+
+            # Field name
+            tk.Label(item, text=field,
+                     font=FONTS.get('small', FONT_FALLBACKS['small']),
+                     bg=COLORS['bg_tertiary'],
+                     fg=COLORS['text_secondary'],
+                     width=12, anchor=tk.W).pack(side=tk.LEFT, padx=(10, 5), pady=8)
+
+            # Status indicator
+            status = tk.Label(item, text="Pending",
+                              font=FONTS.get('small', FONT_FALLBACKS['small']),
+                              bg=COLORS['bg_tertiary'],
+                              fg=COLORS['text_muted'])
+            status.pack(side=tk.LEFT, padx=5, pady=8)
+
+            # Store reference
+            setattr(self, f'summary_{field.lower().replace(" ", "_")}', status)
 
     def create_button(self, parent, text, command):
         """Create button"""
         btn_canvas = tk.Canvas(parent, width=200, height=BUTTON_HEIGHT,
-                              bg=COLORS['bg_secondary'], highlightthickness=0)
+                               bg=COLORS['bg_secondary'], highlightthickness=0)
 
         rect = btn_canvas.create_rectangle(0, 0, 200, BUTTON_HEIGHT,
-                                          fill=COLORS['accent_primary'], outline='')
-        text_id = btn_canvas.create_text(100, BUTTON_HEIGHT/2,
-                                        text=text,
-                                        fill='#000000',
-                                        font=FONTS.get('button', FONT_FALLBACKS['button']))
+                                           fill=COLORS['accent_primary'], outline='')
+        text_id = btn_canvas.create_text(100, BUTTON_HEIGHT / 2,
+                                         text=text,
+                                         fill='#1d2021',
+                                         font=FONTS.get('button', FONT_FALLBACKS['button']))
 
         def on_click(e):
             command()
@@ -188,8 +324,26 @@ class FormValidatorView:
 
         return btn_canvas
 
+    def update_char_counter(self, event=None):
+        """Update character counter for message field"""
+        text = self.message_entry.get("1.0", tk.END).strip()
+        char_count = len(text)
+
+        self.char_counter.config(text=f"{char_count}/250 characters")
+
+        if char_count > 250:
+            self.char_counter.config(fg=COLORS['error'])
+        elif char_count > 200:
+            self.char_counter.config(fg=COLORS['warning'])
+        else:
+            self.char_counter.config(fg=COLORS['text_muted'])
+
     def validate_form(self):
-        """Handle form validation with comprehensive feedback"""
+        """Handle form validation with visual feedback"""
+        # Update status badge
+        self.status_badge.config(text="● VALIDATING", fg=COLORS['warning'])
+        self.parent.update()
+
         # Get input values
         full_name = self.name_entry.get()
         email = self.email_entry.get()
@@ -205,88 +359,108 @@ class FormValidatorView:
         }
 
         # Validate all fields
-        validation_results = FormValidator.validate_all(form_data)
+        self.validation_results = FormValidator.validate_all(form_data)
 
         # Sanitize all fields
-        sanitization_results = FormSanitizer.sanitize_all(form_data)
+        self.sanitization_results = FormSanitizer.sanitize_all(form_data)
 
-        # Clear previous results
-        self.results_display.configure(state='normal')
-        self.results_display.delete("1.0", tk.END)
+        # Update indicators
+        self.update_field_indicators()
+
+        # Update summary
+        self.update_summary()
 
         # Display validation results
-        self.results_display.insert(tk.END, "VALIDATION RESULTS\n", 'header')
-        self.results_display.insert(tk.END, "─" * 60 + "\n\n")
+        self.display_validation_results()
 
-        # Full Name
-        is_valid, error_msg = validation_results['full_name']
-        self.results_display.insert(tk.END, "Full Name: ")
-        if is_valid:
-            self.results_display.insert(tk.END, "✓ Valid\n", 'valid')
+        # Display sanitization results
+        self.display_sanitization_results()
+
+        # Update status badge
+        all_valid = all(result[0] for result in self.validation_results.values())
+        if all_valid:
+            self.status_badge.config(text="● ALL VALID", fg=COLORS['success'])
         else:
-            self.results_display.insert(tk.END, f"✗ {error_msg}\n", 'invalid')
+            self.status_badge.config(text="● ISSUES FOUND", fg=COLORS['error'])
 
-        # Email
-        is_valid, error_msg = validation_results['email']
-        self.results_display.insert(tk.END, "Email: ")
-        if is_valid:
-            self.results_display.insert(tk.END, "✓ Valid\n", 'valid')
-        else:
-            self.results_display.insert(tk.END, f"✗ {error_msg}\n", 'invalid')
+    def update_field_indicators(self):
+        """Update visual indicators for each field"""
+        indicators = [
+            (self.name_indicator, 'full_name'),
+            (self.email_indicator, 'email'),
+            (self.username_indicator, 'username'),
+            (self.message_indicator, 'message')
+        ]
 
-        # Username
-        is_valid, error_msg = validation_results['username']
-        self.results_display.insert(tk.END, "Username: ")
-        if is_valid:
-            self.results_display.insert(tk.END, "✓ Valid\n", 'valid')
-        else:
-            self.results_display.insert(tk.END, f"✗ {error_msg}\n", 'invalid')
+        for indicator, field in indicators:
+            is_valid, _ = self.validation_results[field]
+            was_sanitized = self.sanitization_results[field]['was_modified']
 
-        # Message
-        is_valid, error_msg = validation_results['message']
-        msg_sanitized = sanitization_results['message']['was_modified']
-        msg_notes = sanitization_results['message']['notes']
+            if is_valid and not was_sanitized:
+                indicator.config(fg=COLORS['success'])
+            elif was_sanitized:
+                indicator.config(fg=COLORS['warning'])
+            else:
+                indicator.config(fg=COLORS['error'])
 
-        self.results_display.insert(tk.END, "Message: ")
-        if is_valid and not msg_sanitized:
-            self.results_display.insert(tk.END, "✓ Valid\n", 'valid')
-        elif msg_sanitized:
-            self.results_display.insert(tk.END, f"⚠ Sanitized ({', '.join(msg_notes)})\n", 'warning')
-        else:
-            self.results_display.insert(tk.END, f"✗ {error_msg}\n", 'invalid')
+    def update_summary(self):
+        """Update validation summary"""
+        summary_map = {
+            'full_name': self.summary_full_name,
+            'email': self.summary_email,
+            'username': self.summary_username,
+            'message': self.summary_message
+        }
 
-        # Display sanitized output
-        self.results_display.insert(tk.END, "\n")
-        self.results_display.insert(tk.END, "SANITIZED OUTPUT\n", 'header')
-        self.results_display.insert(tk.END, "─" * 60 + "\n\n")
+        for field, label in summary_map.items():
+            is_valid, error = self.validation_results[field]
+            was_sanitized = self.sanitization_results[field]['was_modified']
 
-        # Full Name sanitized
-        name_data = sanitization_results['full_name']
-        self.results_display.insert(tk.END, f"Full Name: {name_data['sanitized']}\n")
-        if name_data['was_modified']:
-            self.results_display.insert(tk.END, f"  → {', '.join(name_data['notes'])}\n", 'warning')
+            if is_valid and not was_sanitized:
+                label.config(text="✓ Valid", fg=COLORS['success'])
+            elif was_sanitized:
+                label.config(text="⚠ Sanitized", fg=COLORS['warning'])
+            else:
+                label.config(text="✗ Invalid", fg=COLORS['error'])
 
-        # Email sanitized
-        email_data = sanitization_results['email']
-        self.results_display.insert(tk.END, f"\nEmail: {email_data['sanitized']}\n")
-        if email_data['was_modified']:
-            self.results_display.insert(tk.END, f"  → {', '.join(email_data['notes'])}\n", 'warning')
+    def display_validation_results(self):
+        """Display detailed validation results"""
+        self.validation_view.configure(state='normal')
+        self.validation_view.delete("1.0", tk.END)
 
-        # Username sanitized
-        username_data = sanitization_results['username']
-        self.results_display.insert(tk.END, f"\nUsername: {username_data['sanitized']}\n")
-        if username_data['was_modified']:
-            self.results_display.insert(tk.END, f"  → {', '.join(username_data['notes'])}\n", 'warning')
+        for field_name, (is_valid, error_msg) in self.validation_results.items():
+            # Field header
+            display_name = field_name.replace('_', ' ').title()
+            self.validation_view.insert(tk.END, f"{display_name}\n", 'header')
 
-        # Message sanitized
-        message_data = sanitization_results['message']
-        self.results_display.insert(tk.END, f"\nMessage: {message_data['sanitized']}\n")
-        if message_data['was_modified']:
-            self.results_display.insert(tk.END, f"  → {', '.join(message_data['notes'])}\n", 'warning')
+            if is_valid:
+                self.validation_view.insert(tk.END, "  ✓ Validation passed\n", 'valid')
+            else:
+                self.validation_view.insert(tk.END, f"  ✗ {error_msg}\n", 'invalid')
 
-        # Process complete
-        self.results_display.insert(tk.END, "\n")
-        self.results_display.insert(tk.END, "─" * 60 + "\n")
-        self.results_display.insert(tk.END, "Process Complete.\n")
+            self.validation_view.insert(tk.END, "\n")
 
-        self.results_display.configure(state='disabled')
+        self.validation_view.configure(state='disabled')
+
+    def display_sanitization_results(self):
+        """Display detailed sanitization results"""
+        self.sanitization_view.configure(state='normal')
+        self.sanitization_view.delete("1.0", tk.END)
+
+        for field_name, data in self.sanitization_results.items():
+            display_name = field_name.replace('_', ' ').title()
+            self.sanitization_view.insert(tk.END, f"{display_name}\n", 'header')
+
+            # Original value
+            self.sanitization_view.insert(tk.END, f"  Original: {data['original']}\n", 'field')
+
+            # Sanitized value
+            if data['was_modified']:
+                self.sanitization_view.insert(tk.END, f"  Sanitized: {data['sanitized']}\n", 'warning')
+                self.sanitization_view.insert(tk.END, f"  Changes: {', '.join(data['notes'])}\n", 'warning')
+            else:
+                self.sanitization_view.insert(tk.END, f"  No changes needed\n", 'valid')
+
+            self.sanitization_view.insert(tk.END, "\n")
+
+        self.sanitization_view.configure(state='disabled')
