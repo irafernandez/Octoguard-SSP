@@ -10,12 +10,118 @@ st.set_page_config(page_title="OctoGuard", page_icon="🐙", layout="wide")
 
 # --- STYLE ---
 st.markdown("""
-    <style>
-    .main { background-color: #121212; color: #ffffff; }
-    .stButton>button { background-color: #ff8c00 !important; color: black !important; font-weight: bold !important; border-radius: 4px; }
-    .accent-line { height: 2px; width: 40px; background-color: #ff4b4b; display: inline-block; margin-left: 10px; }
-    </style>
-    """, unsafe_allow_html=True)
+<style>
+
+/* ---- GLOBAL ---- */
+html, body, [class*="css"] {
+    background-color: #0e0e11 !important;
+    color: #eaeaea !important;
+    font-family: 'Inter', sans-serif;
+}
+
+/* ---- MAIN AREA ---- */
+.main {
+    background: radial-gradient(circle at top, #151515 0%, #0e0e11 60%);
+}
+
+/* ---- SIDEBAR ---- */
+section[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #0b0b0f, #111118);
+    border-right: 1px solid #1f1f2e;
+}
+
+section[data-testid="stSidebar"] h1 {
+    letter-spacing: 1px;
+}
+
+/* ---- HEADERS ---- */
+h1, h2, h3 {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* ---- CONTAINERS (CARDS) ---- */
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    background: rgba(20, 20, 28, 0.85);
+    border-radius: 16px;
+    padding: 20px;
+    border: 1px solid rgba(255,255,255,0.05);
+    box-shadow: 0 0 30px rgba(0,0,0,0.4);
+    backdrop-filter: blur(12px);
+}
+
+/* ---- INPUTS ---- */
+input, textarea {
+    background-color: #0f0f15 !important;
+    border: 1px solid #2a2a3d !important;
+    border-radius: 10px !important;
+    color: #ffffff !important;
+}
+
+/* ---- BUTTONS ---- */
+.stButton>button {
+    background: linear-gradient(135deg, #ff4b4b, #ff8c00);
+    color: black !important;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 0.6em 1.6em;
+    border: none;
+    transition: all 0.25s ease;
+    box-shadow: 0 8px 20px rgba(255,75,75,0.35);
+}
+
+.stButton>button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(255,140,0,0.45);
+}
+
+/* ---- RADIO BUTTONS ---- */
+div[role="radiogroup"] > label {
+    background-color: #12121a;
+    border-radius: 12px;
+    padding: 10px 14px;
+    margin-bottom: 6px;
+    transition: all 0.2s ease;
+}
+
+div[role="radiogroup"] > label:hover {
+    background-color: #1a1a28;
+}
+
+/* ---- ACCENT LINE ---- */
+.accent-line {
+    height: 3px;
+    width: 50px;
+    background: linear-gradient(90deg, #ff4b4b, #ff8c00);
+    border-radius: 999px;
+    margin-top: 6px;
+}
+
+/* ---- CODE BLOCK ---- */
+pre {
+    background-color: #0c0c12 !important;
+    border-radius: 14px;
+    border: 1px solid #1f1f2e;
+}
+
+/* ---- TOAST ---- */
+div[data-testid="stToast"] {
+    background-color: #151520;
+    border: 1px solid #2a2a3d;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div style="text-align:center; margin-bottom:40px;">
+    <h1 style="font-size:3rem; margin-bottom:0;">🐙 OctoGuard</h1>
+    <p style="color:#aaa; font-size:1.1rem;">
+        All-in-one security toolkit for modern web apps
+    </p>
+</div>
+""", unsafe_allow_html=True)
+
 
 # --- SIDEBAR ---
 with st.sidebar:
