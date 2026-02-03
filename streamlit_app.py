@@ -161,32 +161,29 @@ if page == "Password Generator":
             
 # 2. THE COPY BUTTON
         if st.button("Copy Password"):
-            # Using a more robust JS snippet that works on Mobile/iOS/Android
+            
             st.components.v1.html(f"""
+                <div style="display:none;" id="p_text">{current_p}</div>
                 <script>
-                function copyToClipboard(text) {{
-                    // Try modern API first
+                (function() {{
+                    const text = document.getElementById('p_text').innerText;
+                    
+                    // Attempt 1: Modern API (requires HTTPS)
                     if (navigator.clipboard && window.isSecureContext) {{
-                        parent.navigator.clipboard.writeText(text);
+                        navigator.clipboard.writeText(text).then(() => {{
+                            parent.postMessage("copied", "*");
+                        }});
                     }} else {{
-                        // Fallback for mobile/older browsers
-                        var textArea = document.createElement("textarea");
+                        // Attempt 2: The "Old Reliable" method for Mobile/Older browsers
+                        const textArea = document.createElement("textarea");
                         textArea.value = text;
-                        textArea.style.position = "fixed";
-                        textArea.style.left = "-9999px";
-                        textArea.style.top = "0";
                         document.body.appendChild(textArea);
-                        textArea.focus();
                         textArea.select();
-                        try {{
-                            document.execCommand('copy');
-                        }} catch (err) {{
-                            console.error('Fallback copy failed', err);
-                        }}
+                        textArea.setSelectionRange(0, 99999); // Specific for mobile devices
+                        document.execCommand("copy");
                         document.body.removeChild(textArea);
                     }}
-                }}
-                copyToClipboard('{current_p}');
+                }})();
                 </script>
             """, height=0)
             st.toast("Password copied to clipboard!")
