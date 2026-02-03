@@ -159,11 +159,34 @@ if page == "Password Generator":
             # 1. The Password Display
             st.text_input("Password", value=current_p)
             
-        # 2. THE COPY BUTTON
+# 2. THE COPY BUTTON
         if st.button("Copy Password"):
+            # Using a more robust JS snippet that works on Mobile/iOS/Android
             st.components.v1.html(f"""
                 <script>
-                    parent.navigator.clipboard.writeText('{current_p}');
+                function copyToClipboard(text) {{
+                    // Try modern API first
+                    if (navigator.clipboard && window.isSecureContext) {{
+                        parent.navigator.clipboard.writeText(text);
+                    }} else {{
+                        // Fallback for mobile/older browsers
+                        var textArea = document.createElement("textarea");
+                        textArea.value = text;
+                        textArea.style.position = "fixed";
+                        textArea.style.left = "-9999px";
+                        textArea.style.top = "0";
+                        document.body.appendChild(textArea);
+                        textArea.focus();
+                        textArea.select();
+                        try {{
+                            document.execCommand('copy');
+                        }} catch (err) {{
+                            console.error('Fallback copy failed', err);
+                        }}
+                        document.body.removeChild(textArea);
+                    }}
+                }}
+                copyToClipboard('{current_p}');
                 </script>
             """, height=0)
             st.toast("Password copied to clipboard!")
