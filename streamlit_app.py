@@ -159,15 +159,14 @@ if page == "Password Generator":
             # 1. The Password Display
             st.text_input("Password", value=current_p)
             
-            # 2. THE COPY BUTTON
-            if st.button("Copy Password"):
-                
-                st.markdown(f"""
-                    <script>
-                        navigator.clipboard.writeText('{current_p}');
-                    </script>
-                """, unsafe_allow_html=True)
-                st.toast("Password copied to clipboard!")
+        # 2. THE COPY BUTTON
+        if st.button("Copy Password"):
+            st.components.v1.html(f"""
+                <script>
+                    parent.navigator.clipboard.writeText('{current_p}');
+                </script>
+            """, height=0)
+            st.toast("Password copied to clipboard!")
 
             # 3. The Hash Display
             st.text_input("SHA-256 Hash", value=hash_password(current_p))
